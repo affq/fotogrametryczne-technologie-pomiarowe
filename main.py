@@ -404,12 +404,20 @@ def wizard():
     export_camera_orientations_button = tk.Button(export_lf, text="Export camera orientations", command=export_camera_orientations)
     export_camera_orientations_button.pack(padx=10, pady=10, fill=tk.X)
 
+    def assign_coordinations_dialog():
+        result = messagebox.askquestion("Coordination assignment option", "Would you like to manually assign coordinations to markers? If not, you will be asked to choose a file with coordinates.", icon='question')
+
+        if result == 'yes':
+            assign_marker_coordinates_window()
+        else:
+            assign_marker_coordinates_from_file()
+
     def do_everything():
         try:
             open_directory()
             align_photos()
             detect_markers()
-            assign_marker_coordinates_from_file()
+            assign_coordinations_dialog()
             convert_coordinates()
             build_point_cloud(photos_directory)
             build_model(photos_directory)

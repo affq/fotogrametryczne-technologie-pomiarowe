@@ -12,7 +12,7 @@ supported_formats = [".jpg", ".jpeg", ".jp2", ".j2k", ".jxl", ".tif", ".tiff", "
 def wizard():
     root = tk.Tk()
     root.title("Wizard")
-    root.geometry("750x450")
+    root.geometry("500x550")
 
     def find_photos(directory):
         return [f"{directory}/{filename}" for filename in os.listdir(directory) if filename.lower().endswith(tuple(supported_formats))]
@@ -34,14 +34,55 @@ def wizard():
         else:
             raise Exception("No directory selected")
 
-    open_directory_button = tk.Button(root, text="Select directory with photos", command=open_directory)
-    open_directory_button.pack(padx=10, pady=10)
+    open_directory_button = tk.Button(root, text="Select directory with photos", command=open_directory, bg="pink")
+    open_directory_button.pack(padx=10, pady=10, fill=tk.X)
 
     options = tk.Frame(root)
-    options.pack(padx=10, pady=10)
+    options.pack()
 
-    align_photos_lf = tk.LabelFrame(options, text="Align photos", padx=10, pady=10)
-    align_photos_lf.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.BOTH)
+    # frame
+    first_vertical_frame = tk.Frame(options)
+    first_vertical_frame.pack(side=tk.LEFT, fill=tk.BOTH)
+
+    coordinate_system_lf = tk.LabelFrame(first_vertical_frame, text="Coordinate system", padx=10, pady=10)
+    coordinate_system_lf.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH)
+
+    coordinate_system_label = tk.Label(coordinate_system_lf, text="Coordinate system: ")
+    coordinate_system_label.pack(side=tk.TOP, anchor='w')
+
+    coordinate_system_options = ["WGS 84", "ETRS89 / Poland CS92", "ETRS89 / Poland CS2000 zone 5", "Custom"]
+    coordinate_system_combo = ttk.Combobox(coordinate_system_lf, values=coordinate_system_options, state="readonly", width=20)
+    coordinate_system_combo.current(0)
+    coordinate_system_combo.pack(side=tk.TOP, padx=10, pady=10)
+
+    def convert_coordinates():
+        chunk = doc.chunk
+        if not chunk:
+            raise Exception("Brak chunka ze zdjęciami")
+        
+        selected_cs = coordinate_system_combo.get()
+        
+        if selected_cs == "WGS 84":
+            target_crs = Metashape.CoordinateSystem("EPSG::4326")
+        elif selected_cs == "ETRS89 / Poland CS92":
+            target_crs = Metashape.CoordinateSystem("EPSG::2180")
+        elif selected_cs == "ETRS89 / Poland CS2000 zone 5":
+            target_crs = Metashape.CoordinateSystem("EPSG::2176")
+        elif selected_cs == "Other":
+            target_crs = Metashape.app.getCoordinateSystem("Choose coordinate system")
+        
+        if target_crs:
+            chunk.crs = target_crs
+            chunk.updateTransform()
+            messagebox.showinfo("Success", f"Coordinates converted to {selected_cs}")
+        else:
+            messagebox.showerror("Error", "No coordinate system selected")
+
+    convert_button = tk.Button(coordinate_system_lf, text="Convert", command=convert_coordinates)
+    convert_button.pack()
+
+    align_photos_lf = tk.LabelFrame(first_vertical_frame, text="Align photos", padx=10, pady=10)
+    align_photos_lf.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH)
 
     accuracy_options = {
         "Highest": 0,
@@ -91,8 +132,11 @@ def wizard():
     align_photos_button = tk.Button(align_photos_lf, text="Align photos", command=align_photos)
     align_photos_button.pack(side=tk.BOTTOM)
 
-    point_cloud_lf = tk.LabelFrame(options, text="Point cloud", padx=10, pady=10)
-    point_cloud_lf.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.BOTH)
+    second_vertical_frame = tk.Frame(options)
+    second_vertical_frame.pack(side=tk.LEFT, fill=tk.BOTH)
+
+    point_cloud_lf = tk.LabelFrame(second_vertical_frame, text="Point cloud", padx=10, pady=10)
+    point_cloud_lf.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH)
 
     quality_options = {
         "Ultra high": 1,
@@ -160,10 +204,10 @@ def wizard():
         chunk.exportPointCloud(point_cloud_path)
     
     build_point_cloud_button = tk.Button(point_cloud_lf, text="Build point cloud", command=build_point_cloud)
-    build_point_cloud_button.pack()
+    build_point_cloud_button.pack(side=tk.BOTTOM)
 
-    three_d_model_lf = tk.LabelFrame(options, text="Model", padx=10, pady=10)
-    three_d_model_lf.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.BOTH) 
+    three_d_model_lf = tk.LabelFrame(second_vertical_frame, text="Model", padx=10, pady=10)
+    three_d_model_lf.pack(side=tk.TOP, padx=10, pady=10) 
 
     face_count_options = {
         "Low": Metashape.FaceCount.LowFaceCount,
@@ -208,6 +252,7 @@ def wizard():
     def do_everything():
         try:
             open_directory()
+            convert_coordinates()
             align_photos()
             build_point_cloud()
             build_model()

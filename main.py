@@ -2,7 +2,7 @@ import Metashape
 import tkinter as tk
 from tkinter import simpledialog, messagebox, ttk, filedialog
 import os
-from part_4 import detect_markers, export_camera_orientations, assign_marker_coordinates_from_file
+from part_4 import detect_markers, export_camera_orientations, assign_coordinates
 
 app: Metashape.Application = Metashape.Application()
 doc: Metashape.Document = app.document
@@ -15,7 +15,7 @@ photos_directory = None
 def wizard():
     root = tk.Tk()
     root.title("Wizard")
-    root.geometry("780x580")
+    root.geometry("780x540")
 
     def find_photos(directory):
         return [f"{directory}/{filename}" for filename in os.listdir(directory) if filename.lower().endswith(tuple(supported_formats))]
@@ -39,7 +39,7 @@ def wizard():
         else:
             raise Exception("No directory selected")
 
-    open_directory_button = tk.Button(root, text="Select directory with photos", command=open_directory, bg="pink")
+    open_directory_button = tk.Button(root, text="Select directory with photos", command=open_directory)
     open_directory_button.pack(padx=10, pady=10, fill=tk.X)
 
     options = tk.Frame(root)
@@ -233,109 +233,11 @@ def wizard():
     markers_lf = tk.LabelFrame(first_vertical_frame, text="Markers", padx=10, pady=10)
     markers_lf.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH)
 
-    def assign_marker_coordinates_window():
-        chunk = doc.chunk
-        if not chunk:
-            raise Exception("No chunk with detected markers")
-
-        markers = chunk.markers
-
-        if not markers:
-            raise Exception("No markers found in the chunk")
-
-        window = tk.Tk()
-        window.title("Assign Marker Coordinates")
-        window.geometry("250x400")
-
-        canvas = tk.Canvas(window, width=200, height=400)
-        scroll_y = tk.Scrollbar(window, orient="vertical", command=canvas.yview)
-        scroll_frame = tk.Frame(canvas)
-
-        scroll_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scroll_y.set)
-
-        def on_mouse_wheel(event):
-            canvas.yview_scroll(-1 * (event.delta // 120), "units")
-
-        canvas.bind_all("<MouseWheel>", on_mouse_wheel)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scroll_y.pack(side="right", fill="y")
-
-        entries = {} 
-
-        for marker in markers:
-            labelframe = tk.LabelFrame(scroll_frame, text=f"{marker.label}")
-            labelframe.pack(padx=10, pady=10)
-
-            x_frame = tk.Frame(labelframe)
-            x_frame.pack()
-
-            x_label = tk.Label(x_frame, text="X:")
-            x_label.pack(side="left", padx=5, pady=5)
-
-            x_entry = tk.Entry(x_frame)
-            x_entry.pack(side="left", padx=5, pady=5)
-
-            y_frame = tk.Frame(labelframe)
-            y_frame.pack()
-
-            y_label = tk.Label(y_frame, text="Y:")
-            y_label.pack(side="left", padx=5, pady=5)
-
-            y_entry = tk.Entry(y_frame)
-            y_entry.pack(side="left", padx=5, pady=5)
-
-            z_frame = tk.Frame(labelframe)
-            z_frame.pack()
-
-            z_label = tk.Label(z_frame, text="Z:")
-            z_label.pack(side="left", padx=5, pady=5)
-
-            z_entry = tk.Entry(z_frame)
-            z_entry.pack(side="left", padx=5, pady=5)
-        
-            entries[marker.label] = (x_entry, y_entry, z_entry)
-
-        def save_coordinates():
-            try:
-                for marker in markers:
-                    x, y, z = (
-                        float(entries[marker.label][0].get()),
-                        float(entries[marker.label][1].get()),
-                        float(entries[marker.label][2].get()),
-                    )
-                    marker.reference.location = Metashape.Vector([x, y, z])
-                messagebox.showinfo("Success", "Coordinates assigned successfully")
-                window.destroy()
-            except ValueError:
-                messagebox.showerror("Error", "Invalid input. Please enter valid numbers.")
-
-        save_button = tk.Button(scroll_frame, text="Save Coordinates", command=save_coordinates)
-        save_button.pack(pady=10)
-
-        window.mainloop()
-
-
     detect_markers_button = tk.Button(markers_lf, text="Detect markers", command=detect_markers)
     detect_markers_button.pack(padx=10, pady=10, fill=tk.X)
 
-    assign_frame = tk.LabelFrame(markers_lf)
-    assign_frame.pack()
-
-    assign_label = tk.Label(assign_frame, text="Assign marker coordinates:")
-    assign_label.pack(padx=10, pady=10, fill=tk.X)
-
-    assign_marker_coordinates_button = tk.Button(assign_frame, text="Manually", command=assign_marker_coordinates_window)
-    assign_marker_coordinates_button.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.X)
-
-    assign_marker_coordinates_from_file_button = tk.Button(assign_frame, text="From file", command=assign_marker_coordinates_from_file)
-    assign_marker_coordinates_from_file_button.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.X)
+    assign_marker_coordinates_button = tk.Button(markers_lf, text="Assign marker coordinates", command=assign_coordinates)
+    assign_marker_coordinates_button.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X)
 
     coordinate_system_lf = tk.LabelFrame(second_vertical_frame, text="Coordinate system", padx=10, pady=10)
     coordinate_system_lf.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH)
@@ -391,8 +293,6 @@ def wizard():
         
         chunk.crs = selected_cs
         chunk.updateTransform()
-
-        messagebox.showinfo("Success", "Coordinates converted")
         
 
     convert_button = tk.Button(coordinate_system_lf, text="Convert", command=convert_coordinates)
@@ -404,20 +304,12 @@ def wizard():
     export_camera_orientations_button = tk.Button(export_lf, text="Export camera orientations", command=export_camera_orientations)
     export_camera_orientations_button.pack(padx=10, pady=10, fill=tk.X)
 
-    def assign_coordinations_dialog():
-        result = messagebox.askquestion("Coordination assignment option", "Would you like to manually assign coordinations to markers? If not, you will be asked to choose a file with coordinates.", icon='question')
-
-        if result == 'yes':
-            assign_marker_coordinates_window()
-        else:
-            assign_marker_coordinates_from_file()
-
     def do_everything():
         try:
             open_directory()
             align_photos()
             detect_markers()
-            assign_coordinations_dialog()
+            assign_coordinates()
             convert_coordinates()
             build_point_cloud(photos_directory)
             build_model(photos_directory)
@@ -428,7 +320,7 @@ def wizard():
         
         messagebox.showinfo("Success", "All steps completed successfully")
 
-    do_everything_button = tk.Button(root, text="Do everything", command=do_everything)
+    do_everything_button = tk.Button(root, text="Do everything", command=do_everything, bg="#BADA55")
     do_everything_button.pack(padx=10, pady=10, fill=tk.X)
 
     root.mainloop()

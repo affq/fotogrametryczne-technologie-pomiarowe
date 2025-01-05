@@ -374,12 +374,18 @@ class Wizard(tk.Tk):
                         marker.label = label                    
 
     def do_everything4(self):
-        self.chunk.updateTransform()
-        self.chunk.optimizeCameras()
-        self.detect_markers()
-        self.assign_coordinates()
-        self.label_markers()
-    
+        try:
+            self.chunk.updateTransform()
+            self.chunk.optimizeCameras()
+            self.detect_markers()
+            self.assign_coordinates()
+            self.label_markers()
+            self.export_camera_orientations(self.photos_directory)
+        except Exception as e:
+            messagebox.showerror("Error", e)
+            return
+        messagebox.showinfo("Success", "All steps completed successfully")
+
     def do_everything3(self):
         try:
             self.align_photos()
@@ -388,11 +394,9 @@ class Wizard(tk.Tk):
             self.convert_coordinates()
             self.build_point_cloud(self.photos_directory)
             self.build_model(self.photos_directory)
-            self.export_camera_orientations(self.photos_directory)
         except Exception as e:
             messagebox.showerror("Error", e)
             return
-        
         messagebox.showinfo("Success", "All steps completed successfully")
     
     def add_widgets(self):

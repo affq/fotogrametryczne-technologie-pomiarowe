@@ -1,5 +1,5 @@
 # Fdb version 4
-["pdflatex"] 1736092150.28923 "c:/Users/adria/Desktop/STUDIA_FOLDERY/fotogrametryczne-technologie-pomiarowe/instrukcja/instrukcja.tex" "instrukcja.pdf" "instrukcja" 1736092151.93829 0
+["pdflatex"] 1736092609.1754 "c:/Users/adria/Desktop/STUDIA_FOLDERY/fotogrametryczne-technologie-pomiarowe/instrukcja/instrukcja.tex" "instrukcja.pdf" "instrukcja" 1736092610.40394 0
   "C:/Users/adria/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map" 1731971513 80909 eab91d9745dd2edfd62a31d53cd5fe15 ""
   "C:/Users/adria/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/ecbx1200.pk" 1684708379 31952 e91feeb5504c30dc59296b94900ee460 ""
   "C:/Users/adria/AppData/Local/MiKTeX/fonts/pk/ljfour/jknappen/ec/dpi600/ecbx1440.pk" 1679012812 40136 31d5220b499ce0ec017231a80b9b6ffb ""
@@ -87,11 +87,11 @@
   "C:/Users/adria/AppData/Local/Programs/MiKTeX/tex/latex/refcount/refcount.sty" 1576433952 9878 9e94e8fa600d95f9c7731bb21dfb67a4 ""
   "C:/Users/adria/AppData/Local/Programs/MiKTeX/tex/latex/rerunfilecheck/rerunfilecheck.sty" 1657800696 9714 ba3194bd52c8499b3f1e3eb91d409670 ""
   "C:/Users/adria/AppData/Local/Programs/MiKTeX/tex/latex/url/url.sty" 1388490452 12796 8edb7d69a20b857904dd0ea757c14ec9 ""
-  "c:/Users/adria/Desktop/STUDIA_FOLDERY/fotogrametryczne-technologie-pomiarowe/instrukcja/instrukcja.tex" 1736092149 2937 bf9b50330c53f9e7bce0ef09e9939f12 ""
+  "c:/Users/adria/Desktop/STUDIA_FOLDERY/fotogrametryczne-technologie-pomiarowe/instrukcja/instrukcja.tex" 1736092608 3046 7be305195cefad9e1afe6d981b926d62 ""
   "img/interfejs.png" 1736090515 34913 85e4a76a66ef17b06bf490a115ef688b ""
-  "instrukcja.aux" 1736092151 1120 fdaa0bf9edda388efef8f9a6249b9c29 "pdflatex"
-  "instrukcja.out" 1736092151 505 1ad42687d15c809972238e0e24115da9 "pdflatex"
-  "instrukcja.tex" 1736092149 2937 bf9b50330c53f9e7bce0ef09e9939f12 ""
+  "instrukcja.aux" 1736092610 1120 fdaa0bf9edda388efef8f9a6249b9c29 "pdflatex"
+  "instrukcja.out" 1736092610 505 1ad42687d15c809972238e0e24115da9 "pdflatex"
+  "instrukcja.tex" 1736092608 3046 7be305195cefad9e1afe6d981b926d62 ""
   (generated)
   "instrukcja.aux"
   "instrukcja.log"

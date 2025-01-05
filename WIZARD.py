@@ -7,8 +7,6 @@ app: Metashape.Application = Metashape.Application()
 doc: Metashape.Document = app.document
 chunk: Metashape.Chunk = doc.chunk
 
-supported_formats = [".jpg", ".jpeg", ".jp2", ".j2k", ".jxl", ".tif", ".tiff", ".png", ".bmp", ".exr", ".tga", ".pgm", ".ppm", ".dng", ".mpo", ".seq", ".ara"]
-
 class Wizard(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -26,6 +24,7 @@ class Wizard(tk.Tk):
         self.depth_filtering_options = {"Disabled": Metashape.FilterMode.NoFiltering, "Mild": Metashape.FilterMode.MildFiltering, "Moderate": Metashape.FilterMode.ModerateFiltering, "Aggressive": Metashape.FilterMode.AggressiveFiltering}
         self.face_count_options = { "Low": Metashape.FaceCount.LowFaceCount, "Medium": Metashape.FaceCount.MediumFaceCount, "High": Metashape.FaceCount.HighFaceCount, "Custom": None}
         self.epsg_codes = {"WGS 84": 4326, "EPSG:2180": 2180, "EPSG:2178": 2178}
+        self.supported_formats = [".jpg", ".jpeg", ".jp2", ".j2k", ".jxl", ".tif", ".tiff", ".png", ".bmp", ".exr", ".tga", ".pgm", ".ppm", ".dng", ".mpo", ".seq", ".ara"]
 
         self.MARKER_FILE = None
 
@@ -108,7 +107,7 @@ class Wizard(tk.Tk):
         self.chunk.updateTransform()
 
     def find_photos(self, directory):
-        return [f"{directory}/{filename}" for filename in os.listdir(directory) if filename.lower().endswith(tuple(supported_formats))]
+        return [f"{directory}/{filename}" for filename in os.listdir(directory) if filename.lower().endswith(tuple(self.supported_formats))]
     
     def open_directory(self):
         cameras_crs = Metashape.app.getCoordinateSystem()

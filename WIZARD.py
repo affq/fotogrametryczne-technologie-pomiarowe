@@ -11,7 +11,7 @@ class Wizard(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Wizard")
-        self.geometry("780x610")
+        self.geometry("780x640")
         
         self.app = app
         self.doc = doc
@@ -205,7 +205,10 @@ class Wizard(tk.Tk):
 
     def add_open_directory_button(self):
         open_directory_button = tk.Button(self, text="Select directory with photos", command=self.open_directory)
-        open_directory_button.pack(padx=10, pady=10, fill=tk.X)
+        open_directory_button.pack(padx=10, pady=5, fill=tk.X)
+
+        load_markers_button = tk.Button(self, text="Load markers from file", command=self.load_markers_from_file)
+        load_markers_button.pack(padx=10, pady=5, fill=tk.X)
     
     def add_ramki(self):
         self.options = tk.Frame(self)
@@ -309,14 +312,14 @@ class Wizard(tk.Tk):
         markers_lf = tk.LabelFrame(self.first_vertical_frame, text="Markers", padx=10, pady=10)
         markers_lf.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH)
 
-        load_markers_button = tk.Button(markers_lf, text="Load markers from file", command=self.load_markers_from_file)
-        load_markers_button.pack(padx=10, pady=10, fill=tk.X)
-
         detect_markers_button = tk.Button(markers_lf, text="Detect markers", command=self.detect_markers)
         detect_markers_button.pack(padx=10, pady=10, fill=tk.X)
 
         assign_marker_coordinates_button = tk.Button(markers_lf, text="Assign marker coordinates", command=self.assign_coordinates)
         assign_marker_coordinates_button.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X)
+
+        label_markers_button = tk.Button(markers_lf, text="Label markers", command=self.label_markers)
+        label_markers_button.pack(side=tk.TOP, padx=10, pady=10, fill=tk.X)
 
     def add_coordinate_system_frame(self):
         coordinate_system_lf = tk.LabelFrame(self.second_vertical_frame, text="Coordinate system", padx=10, pady=10)
@@ -352,23 +355,33 @@ class Wizard(tk.Tk):
         export_camera_orientations_button.pack(padx=10, pady=10, fill=tk.X)
 
     def add_do_all_button(self):
-        do_everything_button = tk.Button(self, text="Do everything na 3", command=self.do_everything3, bg="#BADA55")
+        do_everything_button = tk.Button(self, text="Do everything na 3", command=self.do_everything3)
         do_everything_button.pack(padx=10, pady=5, fill=tk.X)
 
-        do_everything_na4_button = tk.Button(self, text="Do everything na 4", command=self.do_everything4, bg="#aabbcc")
+        do_everything_na4_button = tk.Button(self, text="Do everything na 4", command=self.do_everything4)
         do_everything_na4_button.pack(padx=10, fill=tk.X)
 
+    def label_markers(self):
+        with open (self.MARKER_FILE, 'r') as f:
+            lines = f.readlines()
+            for marker in self.chunk.markers:
+                smallest_dist = 100000
+                for line in lines:
+                    label, y, x, z = line.split()
+                    dist = (marker.reference.location.x - float(x))**2 + (marker.reference.location.y - float(y))**2 + (marker.reference.location.z - float(z))**2
+                    if dist < smallest_dist:
+                        smallest_dist = dist
+                        marker.label = label                    
+
     def do_everything4(self):
-        self.load_markers_from_file()
-        self.open_directory()
-        self.align_photos()
-        #tu manualnie pomierzyć?
+        self.chunk.updateTransform()
+        self.chunk.optimizeCameras()
         self.detect_markers()
         self.assign_coordinates()
-        #pętla przez plik uav i przypisanie każdemu markerowi labela
+        self.label_markers()
+    
     def do_everything3(self):
         try:
-            self.open_directory()
             self.align_photos()
             self.detect_markers()
             self.assign_coordinates()

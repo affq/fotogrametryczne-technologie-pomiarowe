@@ -2,7 +2,6 @@ import Metashape
 import tkinter as tk
 from tkinter import simpledialog, messagebox, ttk, filedialog
 import os
-from part_4 import detect_markers, export_camera_orientations, assign_coordinates
 
 app: Metashape.Application = Metashape.Application()
 doc: Metashape.Document = app.document
@@ -15,10 +14,90 @@ photos_directory = None
 def wizard():
     root = tk.Tk()
     root.title("Wizard")
-    root.geometry("780x540")
+    root.geometry("780x580")
+
+    def detect_markers():
+        chunk = doc.chunk
+        if not chunk:
+            raise Exception("No chunk selected")
+        
+        marker_type = Metashape.TargetType.CrossTarget
+        chunk.detectMarkers(marker_type, tolerance=0)
+
+    def assign_coordinates():
+        chunk = doc.chunk
+        if not chunk:
+            raise Exception("No chunk selected")
+        
+        crs = chunk.crs
+        for marker in chunk.markers:
+            marker.reference.location = crs.project(chunk.transform.matrix.mulp(marker.position))
+
+        chunk.updateTransform()
+        chunk.op
+
+
+    def export_camera_orientations(path):
+        chunk = doc.chunk
+        if not chunk:
+            raise Exception("No chunk selected")
+        
+        if path:
+            output_file = path + "/camera_orientations.txt"
+        else:
+            output_file = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
+        
+        with open(output_file, 'w') as f:
+            f.write("label x y z yaw[deg] pitch[deg] roll[deg]\n")
+            for camera in chunk.cameras:
+                if camera.transform:
+                    position = camera.transform.translation()
+                    rotation = camera.transform.rotation()
+
+                    yaw, pitch, roll = Metashape.utils.mat2ypr(rotation)
+                    f.write(f"{camera.label} {position.x} {position.y} {position.z} {yaw} {pitch} {roll}\n")
+
+    def load_markers_from_file():
+        chunk = doc.chunk
+        if not chunk:
+            raise Exception("No chunk selected")
+        
+        file = filedialog.askopenfilename(filetypes=[("Text files", "*.txt")])
+        chunk.crs = Metashape.CoordinateSystem("EPSG::2178")
+
+        if chunk.cameras:
+            convert_cameras()
+
+        with open(file, 'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                label, y, x, z = line.split()
+                chunk.addMarker()
+                chunk.markers[-1].label = label
+                chunk.markers[-1].reference.location = Metashape.Vector([float(x), float(y), float(z)])
 
     def find_photos(directory):
         return [f"{directory}/{filename}" for filename in os.listdir(directory) if filename.lower().endswith(tuple(supported_formats))]
+
+    def convert_cameras(epsg=2178):
+        cameras_epsg = Metashape.CoordinateSystem(f"EPSG::4326")
+        selected_cs = Metashape.CoordinateSystem(f"EPSG::{epsg}")
+
+        for camera in chunk.cameras:
+            camera.reference.location = Metashape.CoordinateSystem.transform(camera.reference.location, cameras_epsg, selected_cs)
+
+        chunk.crs = selected_cs
+        chunk.updateTransform()
+
+    def convert_markers(epsg=4326):
+        markers_epsg = Metashape.CoordinateSystem(f"EPSG::2178")
+        selected_cs = Metashape.CoordinateSystem(f"EPSG::{epsg}")
+
+        for marker in chunk.markers:
+            marker.reference.location = Metashape.CoordinateSystem.transform(marker.reference.location, markers_epsg, selected_cs)
+
+        chunk.crs = selected_cs
+        chunk.updateTransform()
 
     def open_directory():
         directory = filedialog.askdirectory(title="Select directory with photos")
@@ -35,7 +114,11 @@ def wizard():
             if not chunk:
                 chunk = doc.addChunk()
             
+            chunk.crs = Metashape.CoordinateSystem("EPSG::4326")
             chunk.addPhotos(photos)
+
+            if chunk.markers:
+                convert_markers()
         else:
             raise Exception("No directory selected")
 
@@ -45,7 +128,6 @@ def wizard():
     options = tk.Frame(root)
     options.pack()
 
-    # frame
     first_vertical_frame = tk.Frame(options)
     first_vertical_frame.pack(side=tk.LEFT, fill=tk.BOTH)
 
@@ -232,6 +314,9 @@ def wizard():
 
     markers_lf = tk.LabelFrame(first_vertical_frame, text="Markers", padx=10, pady=10)
     markers_lf.pack(side=tk.TOP, padx=10, pady=10, fill=tk.BOTH)
+
+    load_markers_button = tk.Button(markers_lf, text="Load markers from file", command=load_markers_from_file)
+    load_markers_button.pack(padx=10, pady=10, fill=tk.X)
 
     detect_markers_button = tk.Button(markers_lf, text="Detect markers", command=detect_markers)
     detect_markers_button.pack(padx=10, pady=10, fill=tk.X)

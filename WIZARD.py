@@ -39,9 +39,6 @@ class Wizard(tk.Tk):
         self.check_chunk()
         marker_type = Metashape.TargetType.CrossTarget
         self.chunk.detectMarkers(marker_type, tolerance=0)
-        for marker in self.chunk.markers:
-            if len(marker.projections) < 5:
-                self.chunk.remove(marker)
         self.chunk.updateTransform()
 
     def assign_coordinates(self):
@@ -55,17 +52,19 @@ class Wizard(tk.Tk):
         if path:
             output_file = path + "/camera_orientations.txt"
         else:
-            output_file = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Text files", "*.txt")])
-        
-        with open(output_file, 'w') as f:
-            f.write("label x y z yaw[deg] pitch[deg] roll[deg]\n")
-            for camera in self.chunk.cameras:
-                if camera.transform:
-                    position = camera.transform.translation()
-                    rotation = camera.transform.rotation()
+            output_file = filedialog.asksaveasfilename(filetypes=[("Text files", "*.txt")])
 
-                    yaw, pitch, roll = Metashape.utils.mat2ypr(rotation)
-                    f.write(f"{camera.label} {position.x} {position.y} {position.z} {yaw} {pitch} {roll}\n")
+        self.chunk.exportReference(output_file, Metashape.ReferenceFormat.ReferenceFormatCSV, items=Metashape.ReferenceItems.ReferenceItemsCameras, columns="nxyzabc", delimiter=",")
+
+        # with open(output_file, 'w') as f:
+        #     f.write("label x y z yaw[deg] pitch[deg] roll[deg]\n")
+        #     for camera in self.chunk.cameras:
+        #         if camera.transform:
+        #             position = camera.transform.translation()
+        #             rotation = camera.transform.rotation()
+
+        #             yaw, pitch, roll = Metashape.utils.mat2ypr(rotation)
+        #             f.write(f"{camera.label} {position.x} {position.y} {position.z} {yaw} {pitch} {roll}\n")
 
     def convert_markers(self, selected_cs):
         for marker in self.chunk.markers:
@@ -195,13 +194,14 @@ class Wizard(tk.Tk):
         if camera:
             for camera in self.chunk.cameras:
                 camera.reference.location = Metashape.CoordinateSystem.transform(camera.reference.location, self.chunk.crs, selected_cs)
+                self.chunk.crs = selected_cs
+                self.chunk.updateTransform()
 
         if markers:
             for marker in self.chunk.markers:
                 marker.reference.location = Metashape.CoordinateSystem.transform(marker.reference.location, self.chunk.crs, selected_cs)
-        
-        self.chunk.crs = selected_cs
-        self.chunk.updateTransform()
+                self.chunk.crs = selected_cs
+                self.chunk.updateTransform()
 
     def add_open_directory_button(self):
         open_directory_button = tk.Button(self, text="Select directory with photos", command=self.open_directory)
@@ -365,21 +365,36 @@ class Wizard(tk.Tk):
         with open (self.MARKER_FILE, 'r') as f:
             lines = f.readlines()
             for marker in self.chunk.markers:
-                smallest_dist = 100000
+                is_in_file = False
+                is_from_file = False
                 for line in lines:
-                    label, y, x, z = line.split()
-                    dist = (marker.reference.location.x - float(x))**2 + (marker.reference.location.y - float(y))**2 + (marker.reference.location.z - float(z))**2
-                    if dist < smallest_dist:
-                        smallest_dist = dist
-                        marker.label = label                    
+                    label, y, x, _ = line.split()
+                    if marker.label == label:
+                        is_in_file = True
+                        is_from_file = True
+                        break
+                    dist_x = abs(marker.reference.location.x - float(x))
+                    print(f"Pozycja x markera {marker.label}: {marker.reference.location.x}")
+                    print(f"Pozycja x z pliku: {x}")
+                    if dist_x < 0.5:
+                        dist_y = abs(marker.reference.location.y - float(y))
+                        if dist_y < 0.5:
+                            marker.label = f"{label}_auto"
+                            is_in_file = True
+                            break
+                if not is_in_file and not is_from_file:
+                    self.chunk.remove(marker)
+
+        self.chunk.updateTransform()            
 
     def do_everything4(self):
         try:
             self.chunk.updateTransform()
-            self.chunk.optimizeCameras()
             self.detect_markers()
             self.assign_coordinates()
             self.label_markers()
+            self.chunk.updateTransform()
+            self.align_photos()
             self.export_camera_orientations(self.photos_directory)
         except Exception as e:
             messagebox.showerror("Error", e)
@@ -389,8 +404,6 @@ class Wizard(tk.Tk):
     def do_everything3(self):
         try:
             self.align_photos()
-            self.detect_markers()
-            self.assign_coordinates()
             self.convert_coordinates()
             self.build_point_cloud(self.photos_directory)
             self.build_model(self.photos_directory)
